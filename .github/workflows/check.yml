@@ -1,13 +1,16 @@
 name: TikTok Monitor
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '*/15 * * * *'
-  workflow_dispatch:
 
 jobs:
   check:
     runs-on: ubuntu-latest
+
     steps:
+      - uses: actions/checkout@v4
+
       - name: Read monitor list
         run: cat monitor.txt
