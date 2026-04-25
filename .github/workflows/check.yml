@@ -1,9 +1,9 @@
-name: TikTok Monitor
+name: TikTok Video Monitor
 
 on:
-  workflow_dispatch:
   schedule:
     - cron: '*/15 * * * *'
+  workflow_dispatch:
 
 jobs:
   check:
@@ -12,5 +12,30 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Read monitor list
-        run: cat monitor.txt
+      - name: Check TikTok
+        run: |
+          USER=$(cat monitor.txt)
+          curl -L "https://www.tiktok.com/@$USER" -A "Mozilla/5.0" -o page.txt
+
+          VIDEO=$(grep -o '"id":"[0-9]*"' page.txt | head -1 | cut -d'"' -f4)
+
+          if [ ! -f last.txt ]; then
+            echo $VIDEO > last.txt
+          fi
+
+          LAST=$(cat last.txt)
+
+          if [ "$VIDEO" != "$LAST" ]; then
+            echo "NEW VIDEO!"
+            echo $VIDEO > last.txt
+          else
+            echo "No new video"
+          fi
+
+      - name: Commit cache
+        run: |
+          git config --global user.name "bot"
+          git config --global user.email "bot@github.com"
+          git add last.txt
+          git commit -m "update" || echo nochange
+          git push
